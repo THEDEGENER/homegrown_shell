@@ -20,7 +20,6 @@ int lsh_help(const std::vector<std::string>& args);
 int lsh_exit(const std::vector<std::string>& args);
 int lsh_http_server(const std::vector<std::string>& args);
 int lsh_num_builtins();
-int lsh_file_editor(const std::vector<std::string>& args);
 
 // Global vector of built-in command names.
 std::vector<std::string> builtin_str = { "cd", "help", "exit", "http-server", "blue" };
@@ -29,9 +28,7 @@ std::vector<std::string> builtin_str = { "cd", "help", "exit", "http-server", "b
 using builtin_func_t = int(*)(const std::vector<std::string>&);
 
 // Global vector of built-in function pointers (order must match builtin_str).
-std::vector<builtin_func_t> builtin_func = { lsh_cd, lsh_help, lsh_exit, lsh_http_server, lsh_file_editor};
-
-// Function prototypes using C++ types.
+std::vector<builtin_func_t> builtin_func = { lsh_cd, lsh_help, lsh_exit, lsh_http_server };
 
 std::string lsh_read_line() {
     std::string line;
@@ -49,39 +46,7 @@ std::vector<std::string> lsh_split_line(const std::string &line) {
     return tokens;
 }
 
-// lsh_launch now accepts a vector of strings, then converts them to char* for execvp.
-int lsh_launch(const std::vector<std::string>& args)
-{
-    // Convert vector<string> to a C-style array of char pointers.
-    std::vector<char*> argv;
-    for (const auto &arg : args) {
-        // const_cast is safe here because execvp doesn't modify the strings.
-        argv.push_back(const_cast<char*>(arg.c_str()));
-    }
-    // execvp expects a NULL-terminated array.
-    argv.push_back(nullptr);
-
-    pid_t pid, wpid;
-    int status;
-    pid = fork();
-    if (pid == 0) {
-        // Child process: execute the command.
-        if (execvp(argv[0], argv.data()) == -1) {
-            perror("lsh");
-        }
-        exit(EXIT_FAILURE);
-    } else if (pid < 0) {
-        // Error forking.
-        perror("lsh");
-    } else {
-        // Parent process: wait for child to finish.
-        do {
-            wpid = waitpid(pid, &status, WUNTRACED);
-        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-    }
-    return 1;
-}
-
+// Builtin commands //
 int lsh_cd(const std::vector<std::string>& args) {
     if (args.size() < 2) {
         std::cerr << "lsh: expected argument to \"cd\"\n";
@@ -109,6 +74,7 @@ int lsh_exit(const std::vector<std::string>& args) {
     return 0;
 }
 
+// setup the directory for html files in the linux srv/www directory 
 int lsh_http_server(const std::vector<std::string>& args) {
     std::vector<std::string> new_args;
     std::string file = "./http";
@@ -118,6 +84,38 @@ int lsh_http_server(const std::vector<std::string>& args) {
 
 int lsh_num_builtins() {
     return builtin_str.size();
+}
+
+// Main functions //
+
+// launches the child process using execvp which is passed any command line args 
+int lsh_launch(const std::vector<std::string>& args)
+{
+    std::vector<char*> argv;
+    for (const auto &arg : args) {
+        argv.push_back(const_cast<char*>(arg.c_str()));
+    }
+    argv.push_back(nullptr);
+
+    pid_t pid, wpid;
+    int status;
+    pid = fork();
+    if (pid == 0) {
+        // Child process: execute the command.
+        if (execvp(argv[0], argv.data()) == -1) {
+            perror("lsh");
+        }
+        exit(EXIT_FAILURE);
+    } else if (pid < 0) {
+        // Error forking.
+        perror("lsh");
+    } else {
+        // Parent process: wait for child to finish.
+        do {
+            wpid = waitpid(pid, &status, WUNTRACED);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+    return 1;
 }
 
 int lsh_execute(const std::vector<std::string>& args) {
@@ -146,22 +144,6 @@ void lsh_loop() {
     } while (status);
 }
 
-// make a file editor //
-
-int lsh_file_editor(const std::vector<std::string>& args) {
-    if (args.size() < 2) {
-        std::cout << "lsh: expected argument to \"file editor\"" << std::endl;
-        std::cout << "expected argument type of file name" << std::endl;
-    } else {
-        std::fstream file (args[1].data(), std::ios::out);
-        if (file.is_open()) {
-            file << "hello world" << std::endl;
-        } else {
-            std::cout << "Unable to open or create file" << std::endl;
-        }
-    }
-    return 1;
-}
 
 int main(int argc, char **argv)
 {
