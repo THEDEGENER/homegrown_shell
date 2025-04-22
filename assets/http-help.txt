@@ -1,0 +1,8 @@
+HTTP SERVER
+
+DESCRIPTION
+    Small built-in http server that can proccess simple requests and server html files with css and JS include just plain text files.
+
+OPTIONS
+    -p Specify a port number other than the default 8080.
+    

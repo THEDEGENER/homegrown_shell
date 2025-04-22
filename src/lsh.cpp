@@ -10,6 +10,8 @@
 #include <fstream>
 #include <ncurses.h>
 
+#include "http.hpp"
+
 // Macros you might still need for other parts of your code.
 #define LSH_RL_BUFSIZE 1024
 #define LSH_TOK_DELIM " \t\r\n\a"
@@ -76,10 +78,7 @@ int lsh_exit(const std::vector<std::string>& args) {
 
 // setup the directory for html files in the linux srv/www directory 
 int lsh_http_server(const std::vector<std::string>& args) {
-    std::vector<std::string> new_args;
-    std::string file = "./http";
-    new_args.push_back(file);
-    return lsh_launch(new_args);
+    return start_http_server(args);
 }
 
 int lsh_num_builtins() {
