@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini Twitter Clone</title>
+    <style>
+      /* Reset & base */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        background: #e6ecf0;
+        color: #14171a;
+        display: flex;
+        min-height: 100vh;
+      }
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 250px;
+        background: #fff;
+        border-right: 1px solid #e1e8ed;
+        padding: 20px;
+      }
+      .sidebar h1 {
+        font-size: 24px;
+        color: #1da1f2;
+        margin-bottom: 30px;
+      }
+      .nav-item {
+        padding: 10px 0;
+        font-size: 18px;
+        color: #14171a;
+        cursor: pointer;
+      }
+      .nav-item:hover {
+        background: #e8f5fe;
+      }
+
+      /* Main feed */
+      .feed {
+        flex: 1;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .tweet-box {
+        background: #fff;
+        border: 1px solid #e1e8ed;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+      .tweet-box textarea {
+        width: 100%;
+        border: none;
+        resize: none;
+        font-size: 16px;
+        outline: none;
+      }
+      .tweet-box .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+      }
+      .tweet-box button {
+        background: #1da1f2;
+        border: none;
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .tweet-box button:disabled {
+        background: #99d1f3;
+        cursor: default;
+      }
+
+      .tweet {
+        background: #fff;
+        border-bottom: 1px solid #e1e8ed;
+        padding: 15px;
+        display: flex;
+      }
+      .tweet .avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #ccd6dd;
+        flex-shrink: 0;
+        margin-right: 15px;
+      }
+      .tweet .content {
+        flex: 1;
+      }
+      .tweet .content .author {
+        font-weight: bold;
+        font-size: 16px;
+      }
+      .tweet .content .handle {
+        color: #657786;
+        margin-left: 5px;
+        font-size: 14px;
+      }
+      .tweet .content .text {
+        margin: 8px 0;
+        font-size: 15px;
+      }
+      .tweet .content .tweet-actions {
+        color: #657786;
+        font-size: 14px;
+        display: flex;
+        gap: 20px;
+      }
+      .tweet .content .tweet-actions span {
+        cursor: pointer;
+      }
+      .tweet .content .tweet-actions span:hover {
+        color: #1da1f2;
+      }
+
+      /* Right sidebar */
+      .widgets {
+        width: 300px;
+        background: #f5f8fa;
+        border-left: 1px solid #e1e8ed;
+        padding: 20px;
+      }
+      .widgets h2 {
+        font-size: 20px;
+        margin-bottom: 15px;
+      }
+      .widget-item {
+        background: #fff;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #e1e8ed;
+        margin-bottom: 10px;
+        font-size: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Left nav -->
+    <div class="sidebar">
+      <h1>🐦 MiniTwit</h1>
+      <div class="nav-item">🏠 Home</div>
+      <div class="nav-item">🔎 Explore</div>
+      <div class="nav-item">🔔 Notifications</div>
+      <div class="nav-item">✉️ Messages</div>
+      <div class="nav-item">🔖 Bookmarks</div>
+      <div class="nav-item">📋 Lists</div>
+      <div class="nav-item">👤 Profile</div>
+    </div>
+
+    <!-- Main feed -->
+    <div class="feed">
+      <div class="tweet-box">
+        <textarea rows="3" placeholder="What’s happening?"></textarea>
+        <div class="actions">
+          <small>0/280</small>
+          <button disabled>Tweet</button>
+        </div>
+      </div>
+
+      <!-- Example tweet -->
+      <div class="tweet">
+        <div class="avatar"></div>
+        <div class="content">
+          <div>
+            <span class="author">Jane Doe</span>
+            <span class="handle">@janedoe</span>
+          </div>
+          <div class="text">Just setting up my MiniTwit clone! 🚀</div>
+          <div class="tweet-actions">
+            <span>💬 Reply</span>
+            <span>🔁 Retweet</span>
+            <span>❤ Like</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add more .tweet blocks as needed -->
+    </div>
+
+    <!-- Right widgets -->
+    <div class="widgets">
+      <h2>Who to follow</h2>
+      <div class="widget-item">
+        User One <button style="float: right">Follow</button>
+      </div>
+      <div class="widget-item">
+        User Two <button style="float: right">Follow</button>
+      </div>
+      <div class="widget-item">
+        User Three <button style="float: right">Follow</button>
+      </div>
+    </div>
+  </body>
+</html>

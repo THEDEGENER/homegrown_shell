@@ -1,9 +1,9 @@
 // simple http server
 
 #include <stdio.h>
-#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/poll.h>
 #include <arpa/inet.h>
 #include <iostream>
 #include <fstream>
@@ -13,6 +13,16 @@
 #include <format>
 #include <filesystem>
 #include <regex>
+
+#if defined(__APPLE__)
+    #include <stdlib.h>
+    #include <unistd.h>
+#elif defined(_WIN32) || defined(_WIN64)
+    #include <windows.h>
+#else 
+    #include <unistd.h>
+#endif
+
 
 #include "http.hpp"
 
@@ -52,22 +62,43 @@ int listen_for_command() {
         tokens.push_back(token);
     }
 
-    std::cout << ">> ";
-
-    if (tokens[0] == "exit-server") 
+    if (tokens[0] != "exit-server" && tokens[0] != "help")
     {
-        std::cout << "Stopping HTTP server" << std::endl;
+        std::cout << "Unkown command - type help for options" << std::endl;
         return 1;
-    } 
-    else if (tokens[0] == "help") 
+
+    } else if (tokens[0] == "help")
     {
-        print_asset("http-help");
-        return 0;
-    } 
-    else 
+        std::cout << "TBC" << std::endl;
+        return 1;
+
+    } else if (tokens[0] == "exit-server")
     {
-        std::cout << "unkown command - use exit server to stop" << std::endl;
+        std::cout << "Stopping server" << std::endl;
         return 0;
+
+    } else 
+    {
+        return 1;
+    }
+}
+
+void url_decoded(std::string& encodedQuery, std::string& decodedQuery)
+{
+    for (int i = 0; i < encodedQuery.size(); i++)
+    {
+        if (encodedQuery[i] == '%')
+        {
+            std::string hex{ encodedQuery[i+1], encodedQuery[i+2] };
+            int ch = std::stoi(hex, nullptr, 16);
+            decodedQuery.push_back(static_cast<char>(ch));
+            i += 2;
+        } else if (encodedQuery[i] == '+')
+        {
+            decodedQuery.push_back(' ');
+        } else {
+            decodedQuery.push_back(encodedQuery[i]);
+        }
     }
 }
 
@@ -113,8 +144,9 @@ void build_http_response(std::string& mime_type, std::string &response, std::str
 
     if (!file) 
     {
-        std::cout << "Unable to open file" << std::endl;
-        response = "HTTP/1.1 404 Not Found\r\n Content-Type: text/plain\r\n\r\n 404 Not Found";
+        std::cout << "\033[31m" << "Unable to open file" << "\033[0m" << std::endl;
+
+        response = "HTTP/1.1 404 Not Found\r\n Content-Type: text/plain\r\n\r\n 404 Not Found\n";
         return;
     }
 
@@ -138,24 +170,33 @@ void handle_client(int &client_fd)
     {
         buffer.resize(bytes_received);
 
-        std::cout << buffer << std::endl;
-
         std::smatch mtch;
-        std::regex expr(
-            R"(^\s*(GET|POST)\s+/([^ ]*)\s+HTTP/1\.[01])"
-        );
+        // capture method, path, and HTTP version separately
+        std::regex expr(R"(^\s*(GET|POST)\s+/([^ ]*)\s+(HTTP/1\.[01]))");
 
         if (std::regex_search (buffer, mtch, expr))
         {
+            
+            std::cout << "\033[35m" << mtch[1].str() << "\033[0m" << " ";
+
             // Construct string from the match range
             std::string url_encoded_filename(mtch[2].str());
-            std::cout << "Filename: " << url_encoded_filename << std::endl;
+
+            std::string decoded_url;
+
+            url_decoded(url_encoded_filename, decoded_url);
+
+            std::cout << decoded_url << " ";
+
+            std::cout << "\033[35m" << mtch[3].str() << "\033[0m" << " | ";
+
+            std::cout << "Filename: " << decoded_url << " | ";
 
             std::string mime_type;
             std::string response;
 
             // build the http response
-            set_mime_type(url_encoded_filename, mime_type);
+            set_mime_type(decoded_url, mime_type);
 
             // have a more robust console log for request and responses 
             // have more information for the start up of the server
@@ -176,6 +217,9 @@ void handle_client(int &client_fd)
     close(client_fd);
     return;
 }
+
+
+struct pollfd fds[2];
 
 int start_http_server(const std::vector<std::string>& args)
 {
@@ -209,33 +253,56 @@ int start_http_server(const std::vector<std::string>& args)
         exit(EXIT_FAILURE);
     }
 
+    /*
+        initialise the fds array and set the targets to poll
+        the do while will call poll and check if it fails 
+        otherwise the return value from the system indicates
+        whether a socket is ready or the standard input is ready
+        and will execute which ever is
+
+        This allows for the blocking nature of sockets to not
+        interfer with the listening and executing of user commands
+        whilst the server is running.
+    */
+    memset(fds, 0, sizeof(fds));
+    int nfds = 2;
+    fds[0].fd = server;
+    fds[0].events = POLLIN;
+    fds[1].fd = STDIN_FILENO;
+    fds[1].events = POLLIN;
+
     std::cout << ">> Server listening on port: " << PORT << std::endl;
 
-    while (1)
-    {
-        std::cout << ">> ";
-        //if (listen_for_command() == 1) 
-        //{
-        //    break;
-        //} 
-        std::cout << "ready to accept" << std::endl;
+    int status;
+    do {
+        std::cout << ">> " << std::flush;
 
-        struct sockaddr_in client_addr;
-        socklen_t client_addr_len = sizeof(client_addr);
-
-        int client_fd = accept(server, (struct sockaddr*)&client_addr, &client_addr_len);
-        if (client_fd < 0) 
+        if (poll(fds, nfds, -1) < 0)
         {
-            perror("failed to accept");
-            continue;
+            perror("poll() failed");
+            break;
         }
-        else 
+
+        if (fds[0].revents & POLLIN)
         {
-            std::cout << "accepted" << std::endl;
+            struct sockaddr_in client_addr;
+            socklen_t client_addr_len = sizeof(client_addr);
+            int client_fd = accept(server, (struct sockaddr*)&client_addr, &client_addr_len);
+            if (client_fd < 0) {
+                perror("failed to accept");
+                continue;
+            }
             handle_client(client_fd);
         }
-    }
+        if (fds[1].revents & POLLIN)
+        {
+            status = listen_for_command();
+        }
+
+        fds[0].revents = 0;
+        fds[1].revents = 0;
+    } while(status);
+
     close(server);
     return 1;
 }
-

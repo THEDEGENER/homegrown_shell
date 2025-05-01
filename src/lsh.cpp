@@ -12,7 +12,6 @@
 
 #include "http.hpp"
 
-// Macros you might still need for other parts of your code.
 #define LSH_RL_BUFSIZE 1024
 #define LSH_TOK_DELIM " \t\r\n\a"
 
